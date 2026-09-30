@@ -39,3 +39,8 @@ open App/Seqwenser.xcodeproj      # pick your team under Signing, run on device
 CI (`.github/workflows/ios.yml`) does all of this on `macos-14`, runs the app tests on an iPhone simulator, and uploads screenshots.
 
 Licence: GNU AGPL v3.0, see `docs/LICENSES.md`.
+
+## Screenshots (iPhone 15 Pro simulator, from CI)
+| Main | Sample | Step FX | Pattern |
+|---|---|---|---|
+| ![main](docs/screenshots/seqwenser-main.png) | ![sample](docs/screenshots/seqwenser-sample.png) | ![step](docs/screenshots/seqwenser-step-fx.png) | ![pattern](docs/screenshots/seqwenser-pattern.png) |
