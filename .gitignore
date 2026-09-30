@@ -1,0 +1,34 @@
+# Build output
+build/
+build-*/
+cmake-build-*/
+out/
+.juce-cache/
+_deps/
+
+# IDE / OS
+.vscode/
+.idea/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+.DS_Store
+*.swp
+
+# Plugin artefacts
+*.component
+*.vst3
+*.zip
+
+# Never commit audio test material (private recordings, decoded stems).
+*.wav
+*.m4a
+*.aac
+*.mp3
+*.aif
+*.aiff
+*.flac
+*.caf
+mangle-testdata/
+.build/
+App/*.xcodeproj/
