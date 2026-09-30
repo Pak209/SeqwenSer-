@@ -324,7 +324,7 @@ struct Triangle: Shape {
         p.move(to: CGPoint(x: r.midX, y: r.minY))
         p.addLine(to: CGPoint(x: r.maxX, y: r.maxY))
         p.addLine(to: CGPoint(x: r.minX, y: r.maxY))
-        p.closeSubPath()
+        p.closeSubpath()
         return p
     }
 }
