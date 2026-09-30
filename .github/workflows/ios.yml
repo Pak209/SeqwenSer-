@@ -34,6 +34,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Select newest Xcode (XcodeGen writes a newer project format than Xcode 15.4 reads)
+        run: |
+          find /Applications -maxdepth 1 -name 'Xcode*.app'
+          X=$(find /Applications -maxdepth 1 -name 'Xcode_16*.app' | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X"; fi
+
       - name: Tools
         run: |
           sw_vers; xcodebuild -version; swift --version
@@ -44,7 +50,9 @@ jobs:
         run: swift test
 
       - name: Generate Xcode project
-        run: xcodegen generate --spec App/project.yml --project App
+        run: |
+          xcodegen generate --spec App/project.yml --project App
+          grep objectVersion App/Seqwenser.xcodeproj/project.pbxproj
 
       - name: Pick an iPhone simulator
         id: sim
