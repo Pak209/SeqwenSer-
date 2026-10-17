@@ -1,0 +1,80 @@
+name: Seqwenser
+options:
+  bundleIdPrefix: com.dkimoto
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1,2"
+packages:
+  Seqwenser:
+    path: ..
+targets:
+  Seqwenser:
+    type: application
+    platform: iOS
+    sources:
+      - path: Seqwenser
+    dependencies:
+      - package: Seqwenser
+        product: SeqwenserKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dkimoto.seqwenser
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_PREVIEWS: NO
+    info:
+      path: Seqwenser/Info.plist
+      properties:
+        CFBundleDisplayName: Seqwenser
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen:
+          UIColorName: ""
+          UIImageName: ""
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIRequiresFullScreen: false
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSMicrophoneUsageDescription: Seqwenser records from the microphone when you tap RECORD, so you can sample your own sounds.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UIBackgroundModes: [audio]
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Audio
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.audio, public.mp3, com.apple.m4a-audio, com.microsoft.waveform-audio, public.aiff-audio, com.apple.coreaudio-format]
+  SeqwenserTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SeqwenserTests
+    dependencies:
+      - target: Seqwenser
+      - package: Seqwenser
+        product: SeqwenserKit
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.dkimoto.seqwenser.tests
+schemes:
+  Seqwenser:
+    build:
+      targets:
+        Seqwenser: all
+        SeqwenserTests: [test]
+    test:
+      targets: [SeqwenserTests]
+    run:
+      config: Debug

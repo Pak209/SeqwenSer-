@@ -1,0 +1,109 @@
+name: Logic AU plug-in (later target, manual)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: macos-au-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash   # -eo pipefail
+
+jobs:
+  linux-core:
+    name: DSP core tests (Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build + run the JUCE-free DSP core tests
+        run: |
+          cmake -S . -B build-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DMANGLE_BUILD_PLUGIN=OFF -DMANGLE_BUILD_TESTS=ON || \
+            { sudo apt-get update && sudo apt-get install -y ninja-build && cmake -S . -B build-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DMANGLE_BUILD_PLUGIN=OFF -DMANGLE_BUILD_TESTS=ON; }
+          cmake --build build-core
+          ctest --test-dir build-core --output-on-failure
+
+  au:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      COMPONENT: build/plugin/Mangle_artefacts/Release/AU/Mangle.component
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tools
+        run: |
+          sw_vers
+          xcodebuild -version
+          command -v ninja || brew install ninja
+          cmake --version
+
+      - name: Configure (Release, universal arm64 + x86_64)
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          -DMANGLE_STANDALONE=ON -DMANGLE_BUILD_TESTS=ON
+
+      - name: Build AU + Standalone + tests
+        run: cmake --build build --target Mangle_AU Mangle_Standalone mangle_core_tests MangleTests
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Confirm the macOS-only test ran (M4A/AAC through CoreAudio)
+        run: |
+          log=build/Testing/Temporary/LastTest.log
+          grep -E "macOS|tests passed" "$log"
+          grep -q "\[  OK  \] macOS: M4A (AAC) loads through CoreAudio" "$log" || { echo "::error::macOS M4A test did not run or failed"; exit 1; }
+
+      - name: Inspect bundle
+        run: |
+          ls -la "$COMPONENT/Contents/MacOS"
+          lipo -info "$COMPONENT/Contents/MacOS/Mangle"
+          lipo -info "$COMPONENT/Contents/MacOS/Mangle" | grep -q arm64
+          lipo -info "$COMPONENT/Contents/MacOS/Mangle" | grep -q x86_64
+          plutil -p "$COMPONENT/Contents/Info.plist" | grep -A12 AudioComponents
+
+      - name: Ad-hoc sign + install to ~/Library/Audio/Plug-Ins/Components
+        run: |
+          codesign --force --deep -s - "$COMPONENT"
+          codesign -dv "$COMPONENT" 2>&1 | head -5
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          rm -rf ~/Library/Audio/Plug-Ins/Components/Mangle.component
+          cp -R "$COMPONENT" ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 2
+
+      - name: auval -v aumu Mngl Pk20
+        run: |
+          auval -a | grep -i "Mngl" || (echo "Mangle not listed by auval -a"; auval -a | tail -20)
+          set +e
+          auval -v aumu Mngl Pk20 | tee auval.log
+          status=${PIPESTATUS[0]}
+          set -e
+          grep -q "AU VALIDATION SUCCEEDED" auval.log || { echo "::error::auval failed (exit $status)"; exit 1; }
+          [ "$status" -eq 0 ] || { echo "::error::auval exit code $status"; exit 1; }
+
+      - name: auval -strict (informational)
+        continue-on-error: true
+        run: auval -strict -v aumu Mngl Pk20 | tail -40
+
+      - name: Zip component
+        if: always()
+        run: |
+          if [ -d "$COMPONENT" ]; then
+            ditto -c -k --keepParent "$COMPONENT" Mangle-AU-macOS-universal.zip
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Mangle-AU-macOS-universal
+          path: |
+            Mangle-AU-macOS-universal.zip
+            auval.log
+          if-no-files-found: warn
